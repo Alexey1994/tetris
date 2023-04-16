@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title></title>
+	
+	<style>
+		body, html {
+			position: relative;
+			margin: 0;
+			padding: 0;
+			height: 100%;
+		}
+		
+		#wrapper {
+			width: 200px;
+			height: 400px
+		}
+	</style>
+</head>
+<body>
+	<div id="wrapper"></div>
+	
+	<script>
+		function createTetris(parentElement) {
+			var pixelWidth = parentElement.clientWidth
+			var pixelHeight = parentElement.clientHeight
+			
+			var pointWidth = parentElement.clientWidth / 10
+			var pointHeight = parentElement.clientHeight / 20
+			
+			var canvas = document.createElement('canvas')
+			canvas.setAttribute('width', pixelWidth)
+			canvas.setAttribute('height', pixelHeight)
+			
+			var canvasContext = canvas.getContext('2d')
+			
+			console.log(canvasContext)
+			
+			function clear() {
+				canvasContext.fillStyle = '#FFFFFF'
+				canvasContext.fillRect(0, 0, pixelWidth, pixelHeight)
+			}
+			
+			function drawPoint(x, y) {
+				canvasContext.fillStyle = '#000000'
+				canvasContext.fillRect(x * pointWidth , y * pointHeight, pointWidth, pointHeight)
+				
+				canvasContext.fillStyle = '#FFFFFF'
+				canvasContext.fillRect(x * pointWidth + 1 , y * pointHeight + 1, pointWidth - 2, pointHeight - 2)
+				
+				canvasContext.fillStyle = '#000000'
+				canvasContext.fillRect(x * pointWidth + 2 , y * pointHeight + 2, pointWidth - 4, pointHeight - 4)
+			}
+			
+			function normalizeFigure(figure) {
+				function hasLeftSpace() {
+					for(var y = 0; y < 4; ++y) {
+						if(figure[y * 4]) {
+							return false
+						}
+					}
+					
+					return true
+				}
+				
+				function hasTopSpace() {
+					for(var x = 0; x < 4; ++x) {
+						if(figure[x]) {
+							return false
+						}
+					}
+					
+					return true
+				}
+				
+				while(hasLeftSpace()) {
+					for(var y = 0; y < 4; ++y) {
+						for(var x = 1; x < 4; ++x) {
+							figure[y * 4 + x - 1] = figure[y * 4 + x]
+						}
+					}
+					
+					for(var y = 0; y < 4; ++y) {
+						figure[y * 4 + 3] = 0
+					}
+				}
+				
+				while(hasTopSpace()) {
+					for(var y = 1; y < 4; ++y) {
+						for(var x = 0; x < 4; ++x) {
+							figure[(y - 1) * 4 + x] = figure[y * 4 + x]
+						}
+					}
+					
+					for(var x = 0; x < 4; ++x) {
+						figure[3 * 4 + x] = 0
+					}
+				}
+			}
+			
+			function generateFigure() {
+				var figure = new Array(4 * 4).fill(0)
+				
+				for(var i = 0; i < 4; ++i) {
+					var x
+					var y
+						
+					do {
+						x = Math.floor(Math.random() * 4)
+						y = Math.floor(Math.random() * 4)
+					}
+					while(figure[y * 4 + x])
+						
+					figure[y * 4 + x] = 1
+				}
+				
+				var hasSwaps
+				do {
+					hasSwaps = false
+					
+					for(var y = 0; y < 4; ++y) {
+						for(var x = 1; x < 4; ++x) {
+							if(
+								figure[y * 4 + x] &&
+								!(figure[y * 4 + x - 1])
+							) {
+								figure[y * 4 + x - 1] = 1
+								figure[y * 4 + x] = 0
+								
+								hasSwaps = true
+							}
+						}
+					}
+					
+					for(var y = 1; y < 4; ++y) {
+						for(var x = 0; x < 4; ++x) {
+							if(
+								figure[y * 4 + x] &&
+								!(figure[(y - 1) * 4 + x])
+							) {
+								figure[(y - 1) * 4 + x] = 1
+								figure[y * 4 + x] = 0
+								
+								hasSwaps = true
+							}
+						}
+					}
+				}
+				while(hasSwaps)
+				
+				normalizeFigure(figure)
+					
+				return figure
+			}
+			
+			function drawFigure(figure, offsetX, offsetY) {
+				for(var y = 0; y < 4; ++y) {
+					for(var x = 0; x < 4; ++x) {
+						if(figure[y * 4 + x] && y + offsetY < 20) {
+							drawPoint(x + offsetX, y + offsetY)
+						}
+					}
+				}
+			}
+			
+			/*
+			1000 0000 0010 0000 1100
+			1000 0000 1110 1100 0100
+			1100 0010 0000 0100 0100
+			0000 1110 0000 0100 0000
+			
+			(0, 0) -> (0, 3)
+			(0, 1) -> (1, 3)
+			(0, 2) -> (2, 3)
+			*/
+			
+			function rotateFigure(figure) {
+				var rotatedFigure = new Array(4 * 4)
+				
+				for(var y = 0; y < 4; ++y) {
+					for(var x = 0; x < 4; ++x) {
+						rotatedFigure[(3 - x) * 4 + y] = figure[y * 4 + x]
+					}
+				}
+				
+				normalizeFigure(rotatedFigure)
+				
+				return rotatedFigure
+			}
+			
+			var currentFigure = generateFigure()
+			var figureX = 4
+			var figureY = 0
+			
+			
+			var level = new Array(20 * 10).fill(0)
+			
+			function drawLevel(level) {
+				for(var y = 0; y < 20; ++y) {
+					for(var x = 0; x < 10; ++x) {
+						if(level[y * 10 + x]) {
+							drawPoint(x, y)
+						}
+					}
+				}
+			}
+			
+			function normalizeLevel(level) {
+				function freeLine(y) {
+					for(; y > 0; --y) {
+						for(var x = 0; x < 10; ++x) {
+							level[y * 10 + x] = level[(y - 1) * 10 + x]
+						}
+					}
+				}
+				
+				for(var y = 0; y < 20; ++y) {
+					var hasFullLine = true
+					
+					for(var x = 0; x < 10; ++x) {
+						if(!level[y * 10 + x]) {
+							hasFullLine = false
+							break
+						}
+					}
+					
+					if(hasFullLine) {
+						freeLine(y)
+					}
+				}
+			}
+			
+			function levelIntersectWithFigure(figure, offsetX, offsetY, level) {
+				for(var y = 0; y < 4; ++y) {
+					for(var x = 0; x < 4; ++x) {
+						if(figure[y * 4 + x] && (x + offsetX >= 10 || y + offsetY >= 20 || level[(y + offsetY) * 10 + x + offsetX])) {
+							return true
+						}
+					}
+				}
+				
+				return false
+			}
+			
+			function fillLevelWithFigure(figure, offsetX, offsetY, level) {
+				for(var y = 0; y < 4; ++y) {
+					for(var x = 0; x < 4; ++x) {
+						if(figure[y * 4 + x] && x + offsetX < 10 && y + offsetY < 20) {
+							level[(y + offsetY) * 10 + x + offsetX] = figure[y * 4 + x]
+						}
+					}
+				}
+			}
+			
+			
+			function drawAll() {
+				clear()
+				drawLevel(level)
+				drawFigure(currentFigure, figureX, figureY)
+			}
+			
+			drawAll()
+			
+
+			var numberOfTicks = 0
+			var speed = 4
+			
+			var gameIntervalId = setInterval(function() {
+				if(!(numberOfTicks % speed)) {
+					++figureY
+					
+					if(levelIntersectWithFigure(currentFigure, figureX, figureY, level)) {
+						fillLevelWithFigure(currentFigure, figureX, figureY - 1, level)
+						normalizeLevel(level)
+						
+						currentFigure = generateFigure()
+						figureX = 4
+						figureY = 0
+						
+						if(levelIntersectWithFigure(currentFigure, figureX, figureY, level)) {
+							clearInterval(gameIntervalId)
+							alert('game over')
+						}
+					}
+					
+					drawAll()
+				}
+				
+				++numberOfTicks
+			}, 50)
+			
+			
+			document.body.addEventListener('keydown', function(event) {
+				switch(event.keyCode) {
+					case 38: { //ArrowUp
+						var rotatedFigure = rotateFigure(currentFigure)
+						
+						if(!levelIntersectWithFigure(rotatedFigure, figureX, figureY, level)) {
+							currentFigure = rotatedFigure
+						}
+						
+						drawAll()
+						
+						break
+					}
+					
+					case 37: { //ArrowLeft
+						if(figureX && !levelIntersectWithFigure(currentFigure, figureX - 1, figureY, level)) {
+							--figureX
+						}
+						
+						drawAll()
+						
+						break
+					}
+					
+					case 39: { //ArrowRight
+						if(!levelIntersectWithFigure(currentFigure, figureX + 1, figureY, level)) {
+							++figureX
+						}
+						
+						drawAll()
+						
+						break
+					}
+					
+					case 40: { //ArrowDown
+						speed = 1
+						break
+					}
+				}
+			})
+			
+			document.body.addEventListener('keyup', function(event) {
+				switch(event.keyCode) {
+					case 40: { //ArrowDown
+						speed = 4
+						break
+					}
+				}
+			})
+			
+			parentElement.appendChild(canvas)
+		}
+		
+		createTetris(wrapper)
+	</script>
+</body>
+</html>
