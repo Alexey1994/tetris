@@ -12,7 +12,11 @@
 			overflow: hidden;
 		}
 		
-		#wrapper {
+		.tetrises {
+			display: flex;
+		}
+		
+		.tetris-wrapper {
 			position: relative;
 			margin: 0 auto;
 			box-sizing: border-box;
@@ -21,10 +25,86 @@
 	</style>
 </head>
 <body>
-	<div id="wrapper"></div>
+	<div class="tetrises">
+		<div class="tetris-wrapper" id="wrapper1"></div>
+		<div class="tetris-wrapper" id="wrapper2"></div>
+		<div class="tetris-wrapper" id="wrapper3"></div>
+	</div>
 	
 	<script>
-		function createTetris(parentElement) {
+		function shiftMatrixLeft(matrix, width, height, row) {
+			for(var y = 0; y < height; ++y) {
+				for(var x = row; x < width - 1; ++x) {
+					matrix[y * width + x] = matrix[y * width + x + 1]
+				}
+			}
+			
+			for(var y = 0; y < height; ++y) {
+				matrix[y * width + width - 1] = null
+			}
+		}
+		
+		function shiftMatrixRight(matrix, width, height, row) {
+			for(var y = 0; y < height; ++y) {
+				for(var x = row; x; --x) {
+					matrix[y * width + x] = matrix[y * width + x - 1]
+				}
+			}
+			
+			for(var y = 0; y < height; ++y) {
+				matrix[y * width] = null
+			}
+		}
+		
+		function shiftMatrixUp(matrix, width, height, column) {
+			for(var y = column; y < height - 1; ++y) {
+				for(var x = 0; x < width; ++x) {
+					matrix[y * width + x] = matrix[(y + 1) * width + x]
+				}
+			}
+					
+			for(var x = 0; x < width; ++x) {
+				matrix[(height - 1) * width + x] = null
+			}
+		}
+		
+		function shiftMatrixDown(matrix, width, height, column) {
+			for(var y = column; y; --y) {
+				for(var x = 0; x < width; ++x) {
+					matrix[y * width + x] = matrix[(y - 1) * width + x]
+				}
+			}
+			
+			for(var x = 0; x < width; ++x) {
+				matrix[0 * width + x] = null
+			}
+		}
+		
+		/*
+			1000 0000 0010 0000 1100
+			1000 0000 1110 1100 0100
+			1100 0010 0000 0100 0100
+			0000 1110 0000 0100 0000
+			
+			(0, 0) -> (0, 3)
+			(0, 1) -> (1, 3)
+			(0, 2) -> (2, 3)
+		*/
+		
+		function rotateMatrixLeft(matrix, width, height) {
+			var rotatedMatrix = new Array(height * width)
+			
+			for(var y = 0; y < height; ++y) {
+				for(var x = 0; x < width; ++x) {
+					rotatedMatrix[(width - 1 - x) * height + y] = matrix[y * width + x]
+				}
+			}
+			
+			return rotatedMatrix
+		}
+		
+		
+		function createTetris(parentElement, LEVEL_WIDTH, LEVEL_HEIGHT, NUMBER_OF_POINTS_IN_FIGURE) {
 			var frame = document.createElement('iframe')
 			with(frame.style) {
 				position = 'absolute'
@@ -49,8 +129,8 @@
 				pixelWidth = parentElement.clientWidth
 				pixelHeight = parentElement.clientHeight
 				
-				pointWidth = parentElement.clientWidth / 10
-				pointHeight = parentElement.clientHeight / 20
+				pointWidth = parentElement.clientWidth / LEVEL_WIDTH
+				pointHeight = parentElement.clientHeight / LEVEL_HEIGHT
 				
 				canvas.setAttribute('width', pixelWidth)
 				canvas.setAttribute('height', pixelHeight)
@@ -77,8 +157,8 @@
 			
 			function normalizeFigure(figure) {
 				function hasLeftSpace() {
-					for(var y = 0; y < 4; ++y) {
-						if(figure[y * 4]) {
+					for(var y = 0; y < NUMBER_OF_POINTS_IN_FIGURE; ++y) {
+						if(figure[y * NUMBER_OF_POINTS_IN_FIGURE]) {
 							return false
 						}
 					}
@@ -87,7 +167,7 @@
 				}
 				
 				function hasTopSpace() {
-					for(var x = 0; x < 4; ++x) {
+					for(var x = 0; x < NUMBER_OF_POINTS_IN_FIGURE; ++x) {
 						if(figure[x]) {
 							return false
 						}
@@ -97,84 +177,44 @@
 				}
 				
 				while(hasLeftSpace()) {
-					//shift left
-					for(var y = 0; y < 4; ++y) {
-						for(var x = 1; x < 4; ++x) {
-							figure[y * 4 + x - 1] = figure[y * 4 + x]
-						}
-					}
-					
-					for(var y = 0; y < 4; ++y) {
-						figure[y * 4 + 3] = null
-					}
+					shiftMatrixLeft(figure, NUMBER_OF_POINTS_IN_FIGURE, NUMBER_OF_POINTS_IN_FIGURE, 0)
 				}
 				
 				while(hasTopSpace()) {
-					//shift top
-					for(var y = 1; y < 4; ++y) {
-						for(var x = 0; x < 4; ++x) {
-							figure[(y - 1) * 4 + x] = figure[y * 4 + x]
-						}
-					}
-					
-					for(var x = 0; x < 4; ++x) {
-						figure[3 * 4 + x] = null
-					}
+					shiftMatrixUp(figure, NUMBER_OF_POINTS_IN_FIGURE, NUMBER_OF_POINTS_IN_FIGURE, 0)
 				}
 			}
 			
 			function generateFigure() {
-				var figure = new Array(4 * 4).fill(null)
-				var color = [Math.random() * 127 + 64, Math.random() * 127 + 64, Math.random() * 127 + 64]
+				var figure = new Array(NUMBER_OF_POINTS_IN_FIGURE * NUMBER_OF_POINTS_IN_FIGURE).fill(null)
+				var color = [Math.floor(Math.random() * 127) + 64, Math.floor(Math.random() * 127) + 64, Math.floor(Math.random() * 127) + 64]
 				
 				figure[0] = color
 				
-				for(var i = 0; i < 3; ++i) {
+				for(var i = 0; i < NUMBER_OF_POINTS_IN_FIGURE - 1; ++i) {
 					switch(Math.floor(Math.random() * 4)) {
-						case 0: { //top
-							//shift down
-							for(var y = 3; y; --y) {
-								for(var x = 0; x < 4; ++x) {
-									figure[y * 4 + x] = figure[(y - 1) * 4 + x]
-								}
-							}
-							
-							for(var x = 0; x < 4; ++x) {
-								figure[0 * 4 + x] = null
-							}
-							
+						case 0: { //up
+							shiftMatrixDown(figure, NUMBER_OF_POINTS_IN_FIGURE, NUMBER_OF_POINTS_IN_FIGURE, NUMBER_OF_POINTS_IN_FIGURE - 1)
 							figure[0] = color
 							break
 						}
 						
 						case 1: { //right
 							//find first zero right pos
-							for(var x = 1; figure[0 * 4 + x]; ++x);
-							
-							figure[0 * 4 + x] = color
+							for(var x = 1; figure[0 * NUMBER_OF_POINTS_IN_FIGURE + x]; ++x);
+							figure[0 * NUMBER_OF_POINTS_IN_FIGURE + x] = color
 							break
 						}
 						
-						case 2: { //bottom
+						case 2: { //down
 							//find first zero bottom pos
-							for(var y = 1; figure[y * 4 + 0]; ++y);
-								
-							figure[y * 4 + 0] = color
+							for(var y = 1; figure[y * NUMBER_OF_POINTS_IN_FIGURE + 0]; ++y);
+							figure[y * NUMBER_OF_POINTS_IN_FIGURE + 0] = color
 							break
 						}
 						
 						case 3: { //left
-							//shift right
-							for(var y = 0; y < 4; ++y) {
-								for(var x = 3; x; --x) {
-									figure[y * 4 + x] = figure[y * 4 + x - 1]
-								}
-							}
-							
-							for(var y = 0; y < 4; ++y) {
-								figure[y * 4] = null
-							}
-							
+							shiftMatrixRight(figure, NUMBER_OF_POINTS_IN_FIGURE, NUMBER_OF_POINTS_IN_FIGURE, NUMBER_OF_POINTS_IN_FIGURE - 1)
 							figure[0] = color
 							break
 						}
@@ -187,86 +227,68 @@
 			}
 			
 			function drawFigure(figure, offsetX, offsetY) {
-				for(var y = 0; y < 4; ++y) {
-					for(var x = 0; x < 4; ++x) {
-						if(figure[y * 4 + x] && y + offsetY < 20) {
-							drawPoint(x + offsetX, y + offsetY, figure[y * 4 + x])
+				for(var y = 0; y < NUMBER_OF_POINTS_IN_FIGURE; ++y) {
+					for(var x = 0; x < NUMBER_OF_POINTS_IN_FIGURE; ++x) {
+						if(figure[y * NUMBER_OF_POINTS_IN_FIGURE + x] && y + offsetY < LEVEL_HEIGHT) {
+							drawPoint(x + offsetX, y + offsetY, figure[y * NUMBER_OF_POINTS_IN_FIGURE + x])
 						}
 					}
 				}
 			}
 			
-			/*
-			1000 0000 0010 0000 1100
-			1000 0000 1110 1100 0100
-			1100 0010 0000 0100 0100
-			0000 1110 0000 0100 0000
-			
-			(0, 0) -> (0, 3)
-			(0, 1) -> (1, 3)
-			(0, 2) -> (2, 3)
-			*/
-			
 			function rotateFigure(figure) {
-				var rotatedFigure = new Array(4 * 4)
-				
-				for(var y = 0; y < 4; ++y) {
-					for(var x = 0; x < 4; ++x) {
-						rotatedFigure[(3 - x) * 4 + y] = figure[y * 4 + x]
-					}
-				}
-				
+				var rotatedFigure = rotateMatrixLeft(figure, NUMBER_OF_POINTS_IN_FIGURE, NUMBER_OF_POINTS_IN_FIGURE)
 				normalizeFigure(rotatedFigure)
 				
 				return rotatedFigure
 			}
 			
-			var currentFigure = generateFigure()
-			var figureX = 4
-			var figureY = 0
+			var currentFigure
+			var figureX
+			var figureY
+			
+			function nextFigure() {
+				currentFigure = generateFigure()
+				figureX = Math.floor(LEVEL_WIDTH / 2)
+				figureY = 0
+			}
+			
+			nextFigure()
 			
 			
-			var level = new Array(20 * 10).fill(null)
+			var level = new Array(LEVEL_HEIGHT * LEVEL_WIDTH).fill(null)
 			
 			function drawLevel(level) {
-				for(var y = 0; y < 20; ++y) {
-					for(var x = 0; x < 10; ++x) {
-						if(level[y * 10 + x]) {
-							drawPoint(x, y, level[y * 10 + x])
+				for(var y = 0; y < LEVEL_HEIGHT; ++y) {
+					for(var x = 0; x < LEVEL_WIDTH; ++x) {
+						if(level[y * LEVEL_WIDTH + x]) {
+							drawPoint(x, y, level[y * LEVEL_WIDTH + x])
 						}
 					}
 				}
 			}
 			
 			function normalizeLevel(level) {
-				function freeLine(y) {
-					for(; y > 0; --y) {
-						for(var x = 0; x < 10; ++x) {
-							level[y * 10 + x] = level[(y - 1) * 10 + x]
-						}
-					}
-				}
-				
-				for(var y = 0; y < 20; ++y) {
+				for(var y = 0; y < LEVEL_HEIGHT; ++y) {
 					var hasFullLine = true
 					
-					for(var x = 0; x < 10; ++x) {
-						if(!level[y * 10 + x]) {
+					for(var x = 0; x < LEVEL_WIDTH; ++x) {
+						if(!level[y * LEVEL_WIDTH + x]) {
 							hasFullLine = false
 							break
 						}
 					}
 					
 					if(hasFullLine) {
-						freeLine(y)
+						shiftMatrixDown(level, LEVEL_WIDTH, LEVEL_HEIGHT, y)
 					}
 				}
 			}
 			
 			function levelIntersectWithFigure(figure, offsetX, offsetY, level) {
-				for(var y = 0; y < 4; ++y) {
-					for(var x = 0; x < 4; ++x) {
-						if(figure[y * 4 + x] && (x + offsetX >= 10 || y + offsetY >= 20 || level[(y + offsetY) * 10 + x + offsetX])) {
+				for(var y = 0; y < NUMBER_OF_POINTS_IN_FIGURE; ++y) {
+					for(var x = 0; x < NUMBER_OF_POINTS_IN_FIGURE; ++x) {
+						if(figure[y * NUMBER_OF_POINTS_IN_FIGURE + x] && (x + offsetX >= LEVEL_WIDTH || y + offsetY >= LEVEL_HEIGHT || level[(y + offsetY) * LEVEL_WIDTH + x + offsetX])) {
 							return true
 						}
 					}
@@ -276,10 +298,10 @@
 			}
 			
 			function fillLevelWithFigure(figure, offsetX, offsetY, level) {
-				for(var y = 0; y < 4; ++y) {
-					for(var x = 0; x < 4; ++x) {
-						if(figure[y * 4 + x] && x + offsetX < 10 && y + offsetY < 20) {
-							level[(y + offsetY) * 10 + x + offsetX] = figure[y * 4 + x]
+				for(var y = 0; y < NUMBER_OF_POINTS_IN_FIGURE; ++y) {
+					for(var x = 0; x < NUMBER_OF_POINTS_IN_FIGURE; ++x) {
+						if(figure[y * NUMBER_OF_POINTS_IN_FIGURE + x] && x + offsetX < LEVEL_WIDTH && y + offsetY < LEVEL_HEIGHT) {
+							level[(y + offsetY) * LEVEL_WIDTH + x + offsetX] = figure[y * NUMBER_OF_POINTS_IN_FIGURE + x]
 						}
 					}
 				}
@@ -298,8 +320,15 @@
 			var numberOfTicks = 0
 			var speed = 8
 			var gameIntervalId
+			var gameOver = false
 			
 			frame.contentWindow.onfocus = function() {
+				frame.style.outline = '10px solid #2a2'
+				
+				if(gameOver) {
+					return
+				}
+				
 				clearInterval(gameIntervalId)
 				
 				gameIntervalId = setInterval(function() {
@@ -310,14 +339,12 @@
 							fillLevelWithFigure(currentFigure, figureX, figureY - 1, level)
 							normalizeLevel(level)
 							
-							currentFigure = generateFigure()
-							figureX = 4
-							figureY = 0
+							nextFigure()
 							
 							if(levelIntersectWithFigure(currentFigure, figureX, figureY, level)) {
 								drawAll()
 								clearInterval(gameIntervalId)
-								//frame.contentWindow.alert('game over')
+								gameOver = true
 							}
 						}
 						
@@ -330,6 +357,7 @@
 			
 			frame.contentWindow.onblur = function() {
 				clearInterval(gameIntervalId)
+				frame.style.outline = ''
 			}
 			
 			frame.contentWindow.onresize = function() {
@@ -339,6 +367,10 @@
 			
 
 			frame.contentWindow.onkeydown = function(event) {
+				if(gameOver) {
+					return
+				}
+				
 				switch(event.keyCode) {
 					case 38: { //ArrowUp
 						var rotatedFigure = rotateFigure(currentFigure)
@@ -389,7 +421,6 @@
 			}
 			
 			
-			
 			parentElement.appendChild(canvas)
 			
 			return {
@@ -398,7 +429,7 @@
 		}
 		
 		
-		function updateWrapperSize() {
+		function updateWrapperSize(wrapperElement) {
 			var wrapperWidth
 			var wrapperHeight
 			
@@ -411,21 +442,28 @@
 				wrapperWidth = wrapperHeight / 2
 			}
 			
-			with(wrapper.style) {
+			with(wrapperElement.style) {
 				width = Math.floor(wrapperWidth) + 'px'
 				height = Math.floor(wrapperHeight) + 'px'
 			}
 		}
 		
-		updateWrapperSize()
+		updateWrapperSize(wrapper1)
+		updateWrapperSize(wrapper2)
+		updateWrapperSize(wrapper3)
 		
 		window.onresize = function() {
-			console.log('resize')
-			updateWrapperSize()
+			updateWrapperSize(wrapper1)
+			updateWrapperSize(wrapper2)
+			updateWrapperSize(wrapper3)
 		}
 		
-		var tetris = createTetris(wrapper)
-		tetris.frame.focus()
+		var tetris1 = createTetris(wrapper1, 10, 20, 4)
+		var tetris2 = createTetris(wrapper2, 10, 20, 5)
+		//var tetris3 = createTetris(wrapper3, 12, 24, 6)
+		var tetris3 = createTetris(wrapper3, 20, 40, 10)
+		
+		tetris1.frame.focus()
 	</script>
 </body>
 </html>
