@@ -189,11 +189,13 @@
 				var figure = new Array(NUMBER_OF_POINTS_IN_FIGURE * NUMBER_OF_POINTS_IN_FIGURE).fill(null)
 				var color = [Math.floor(Math.random() * 127) + 64, Math.floor(Math.random() * 127) + 64, Math.floor(Math.random() * 127) + 64]
 				
+				var currentX = 0
+				var currentY = 0
 				figure[0] = color
 				
 				for(var i = 0; i < NUMBER_OF_POINTS_IN_FIGURE - 1; ++i) {
 					switch(Math.floor(Math.random() * 4)) {
-						case 0: { //up
+						/*case 0: { //up
 							shiftMatrixDown(figure, NUMBER_OF_POINTS_IN_FIGURE, NUMBER_OF_POINTS_IN_FIGURE, NUMBER_OF_POINTS_IN_FIGURE - 1)
 							figure[0] = color
 							break
@@ -217,8 +219,50 @@
 							shiftMatrixRight(figure, NUMBER_OF_POINTS_IN_FIGURE, NUMBER_OF_POINTS_IN_FIGURE, NUMBER_OF_POINTS_IN_FIGURE - 1)
 							figure[0] = color
 							break
+						}*/
+
+						case 0: { //up
+							while(figure[currentY * NUMBER_OF_POINTS_IN_FIGURE + currentX]) {
+								if(currentY) {
+									--currentY
+								}
+								else {
+									shiftMatrixDown(figure, NUMBER_OF_POINTS_IN_FIGURE, NUMBER_OF_POINTS_IN_FIGURE, NUMBER_OF_POINTS_IN_FIGURE - 1)
+								}
+							}
+
+							break
+						}
+
+						case 3: { //left
+							while(figure[currentY * NUMBER_OF_POINTS_IN_FIGURE + currentX]) {
+								if(currentX) {
+									--currentX
+								}
+								else {
+									shiftMatrixRight(figure, NUMBER_OF_POINTS_IN_FIGURE, NUMBER_OF_POINTS_IN_FIGURE, NUMBER_OF_POINTS_IN_FIGURE - 1)
+								}
+							}
+							
+							break
+						}
+
+						case 1: { //right
+							while(figure[currentY * NUMBER_OF_POINTS_IN_FIGURE + currentX]) {
+								++currentX
+							}
+							break
+						}
+
+						case 2: { //down
+							while(figure[currentY * NUMBER_OF_POINTS_IN_FIGURE + currentX]) {
+								++currentY
+							}
+							break
 						}
 					}
+
+					figure[currentY * NUMBER_OF_POINTS_IN_FIGURE + currentX] = color
 				}
 				
 				normalizeFigure(figure)
@@ -352,7 +396,7 @@
 					}
 					
 					++numberOfTicks
-				}, 50)
+				}, 5)
 			}
 			
 			frame.contentWindow.onblur = function() {
@@ -461,8 +505,9 @@
 		var tetris1 = createTetris(wrapper1, 10, 20, 4)
 		var tetris2 = createTetris(wrapper2, 10, 20, 5)
 		//var tetris3 = createTetris(wrapper3, 12, 24, 6)
-		var tetris3 = createTetris(wrapper3, 20, 40, 10)
-		
+		var tetris3 = createTetris(wrapper3, 200, 400, 100)
+		//var tetris3 = createTetris(wrapper3, 400, 800, 200)
+
 		tetris1.frame.focus()
 	</script>
 </body>
