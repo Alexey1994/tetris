@@ -195,32 +195,6 @@
 				
 				for(var i = 0; i < NUMBER_OF_POINTS_IN_FIGURE - 1; ++i) {
 					switch(Math.floor(Math.random() * 4)) {
-						/*case 0: { //up
-							shiftMatrixDown(figure, NUMBER_OF_POINTS_IN_FIGURE, NUMBER_OF_POINTS_IN_FIGURE, NUMBER_OF_POINTS_IN_FIGURE - 1)
-							figure[0] = color
-							break
-						}
-						
-						case 1: { //right
-							//find first zero right pos
-							for(var x = 1; figure[0 * NUMBER_OF_POINTS_IN_FIGURE + x]; ++x);
-							figure[0 * NUMBER_OF_POINTS_IN_FIGURE + x] = color
-							break
-						}
-						
-						case 2: { //down
-							//find first zero bottom pos
-							for(var y = 1; figure[y * NUMBER_OF_POINTS_IN_FIGURE + 0]; ++y);
-							figure[y * NUMBER_OF_POINTS_IN_FIGURE + 0] = color
-							break
-						}
-						
-						case 3: { //left
-							shiftMatrixRight(figure, NUMBER_OF_POINTS_IN_FIGURE, NUMBER_OF_POINTS_IN_FIGURE, NUMBER_OF_POINTS_IN_FIGURE - 1)
-							figure[0] = color
-							break
-						}*/
-
 						case 0: { //up
 							while(figure[currentY * NUMBER_OF_POINTS_IN_FIGURE + currentX]) {
 								if(currentY) {
@@ -396,7 +370,7 @@
 					}
 					
 					++numberOfTicks
-				}, 5)
+				}, 50)
 			}
 			
 			frame.contentWindow.onblur = function() {
