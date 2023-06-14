@@ -9,26 +9,94 @@
 			margin: 0;
 			padding: 0;
 			height: 100%;
-			overflow: hidden;
+		}
+
+		* {
+			box-sizing: border-box;
+		}
+
+		.tetrises-wrapper {
+			display: flex;
+			flex-direction: column;
+			height: 100%;
 		}
 		
 		.tetrises {
 			display: flex;
+			flex-grow: 1;
 		}
 		
 		.tetris-wrapper {
+			display: flex;
+			justify-content: center;
 			position: relative;
-			margin: 0 auto;
-			box-sizing: border-box;
+			width: 100%;
+			height: 100%;
 			border: 1px solid #eee;
+		}
+
+		.tetrises-controls {
+			display: flex;
+			justify-content: space-between;
+			padding: 40px;
+		}
+
+		.tetrises-controls__left {
+			display: flex;
+			justify-content: space-between;
+			width: 300px;
+		}
+
+		.tetrises-controls__left button {
+			width: 100px;
+			height: 100px;
+			border-radius: 50px;
+			background-color: #ff0;
+			border-top: 4px solid #ff0;
+			border-left: 4px solid #ff0;
+			border-bottom: 4px solid #ee0;
+			border-right: 4px solid #ee0;
+		}
+
+		.tetrises-controls__left button:nth-child(2) {
+			margin-top: 100px;
+		}
+
+		.tetrises-controls__right {
+
+		}
+
+		.tetrises-controls__right button {
+			width: 200px;
+			height: 200px;
+			border-radius: 100px;
+			background-color: #ff0;
+			border-top: 4px solid #ff0;
+			border-left: 4px solid #ff0;
+			border-bottom: 4px solid #ee0;
+			border-right: 4px solid #ee0;
 		}
 	</style>
 </head>
 <body>
-	<div class="tetrises">
-		<div class="tetris-wrapper" id="wrapper1"></div>
-		<div class="tetris-wrapper" id="wrapper2"></div>
-		<div class="tetris-wrapper" id="wrapper3"></div>
+	<div class="tetrises-wrapper">
+		<div class="tetrises">
+			<button onclick="prevTetris()"><=</button>
+			<div class="tetris-wrapper" id="wrapper1"></div>
+			<button onclick="nextTetris()">=></button>
+		</div>
+
+		<div class="tetrises-controls">
+			<div class="tetrises-controls__left">
+				<button onmousedown="moveLeft()" ontouchstart="moveLeft()"></button>
+				<button onmousedown="speedUp()" onmouseup="speedDown()" ontouchstart="speedUp()" ontouchend="speedDown()"></button>
+				<button onmousedown="moveRight()" ontouchstart="moveRight()"></button>
+			</div>
+
+			<div class="tetrises-controls__right">
+				<button onmousedown="rotate()" ontouchstart="rotate()"></button>
+			</div>
+		</div>
 	</div>
 	
 	<script>
@@ -62,7 +130,7 @@
 					matrix[y * width + x] = matrix[(y + 1) * width + x]
 				}
 			}
-					
+			
 			for(var x = 0; x < width; ++x) {
 				matrix[(height - 1) * width + x] = null
 			}
@@ -110,13 +178,17 @@
 				position = 'absolute'
 				width = '100%'
 				height = '100%'
+				left = '0'
+				top = '0'
 				border = 'none'
+				borderWidth = '0'
 			}
 			
 			parentElement.appendChild(frame)
 			
 			
 			var canvas = document.createElement('canvas')
+			canvas.style.display = 'block'
 			var canvasContext = canvas.getContext('2d')
 			
 			
@@ -126,12 +198,17 @@
 			var pointHeight
 			
 			function updateSize() {
-				pixelWidth = parentElement.clientWidth
-				pixelHeight = parentElement.clientHeight
+				pixelWidth = frame.clientWidth
+				pixelHeight = frame.clientHeight
 				
-				pointWidth = parentElement.clientWidth / LEVEL_WIDTH
-				pointHeight = parentElement.clientHeight / LEVEL_HEIGHT
+				var pointSize = Math.floor(Math.min(pixelWidth / LEVEL_WIDTH, pixelHeight / LEVEL_HEIGHT))
 				
+				pointWidth = pointSize
+				pointHeight = pointSize
+				
+				pixelWidth = pointSize * LEVEL_WIDTH
+				pixelHeight = pointSize * LEVEL_HEIGHT
+
 				canvas.setAttribute('width', pixelWidth)
 				canvas.setAttribute('height', pixelHeight)
 			}
@@ -340,8 +417,8 @@
 			var gameIntervalId
 			var gameOver = false
 			
-			frame.contentWindow.onfocus = function() {
-				frame.style.outline = '10px solid #2a2'
+			/*frame.contentWindow.onfocus = function() {
+				//frame.style.outline = '10px solid #2a2'
 				
 				if(gameOver) {
 					return
@@ -370,13 +447,13 @@
 					}
 					
 					++numberOfTicks
-				}, 50)
-			}
+				}, 100)
+			}*/
 			
-			frame.contentWindow.onblur = function() {
+			/*frame.contentWindow.onblur = function() {
 				clearInterval(gameIntervalId)
-				frame.style.outline = ''
-			}
+				//frame.style.outline = ''
+			}*/
 			
 			frame.contentWindow.onresize = function() {
 				updateSize()
@@ -442,47 +519,106 @@
 			parentElement.appendChild(canvas)
 			
 			return {
-				frame: frame
+				frame: frame,
+				
+				destroy: function() {
+					parentElement.removeChild(frame)
+					parentElement.removeChild(canvas)
+					clearInterval(gameIntervalId)
+				},
+				
+				start: function() {
+					if(gameOver) {
+						return
+					}
+					
+					clearInterval(gameIntervalId)
+					
+					gameIntervalId = setInterval(function() {
+						if(!(numberOfTicks % speed)) {
+							++figureY
+							
+							if(levelIntersectWithFigure(currentFigure, figureX, figureY, level)) {
+								fillLevelWithFigure(currentFigure, figureX, figureY - 1, level)
+								normalizeLevel(level)
+								
+								nextFigure()
+								
+								if(levelIntersectWithFigure(currentFigure, figureX, figureY, level)) {
+									drawAll()
+									clearInterval(gameIntervalId)
+									gameOver = true
+								}
+							}
+							
+							drawAll()
+						}
+						
+						++numberOfTicks
+					}, 100)
+				},
+				
+				pause: function() {
+					clearInterval(gameIntervalId)
+				}
 			}
 		}
 		
 		
-		function updateWrapperSize(wrapperElement) {
-			var wrapperWidth
-			var wrapperHeight
+		var tetris
+		var tetrisWidth = 10
+		var tetrisHeight = 20
+		var tetrisSize = 4
+		
+		function updateTetris() {
+			tetris = createTetris(wrapper1, tetrisWidth, tetrisHeight, tetrisSize)
+			//tetris.frame.focus()
+			tetris.start()
+		}
+		
+		function prevTetris() {
+			if(tetrisSize <= 1) {
+				return
+			}
 			
-			if(document.body.clientWidth > document.body.clientHeight) {
-				wrapperHeight = document.body.clientHeight
-				wrapperWidth = wrapperHeight / 2
-			}
-			else {
-				wrapperHeight = document.body.clientWidth
-				wrapperWidth = wrapperHeight / 2
-			}
+			tetrisWidth -= 2
+			tetrisHeight -= 2
+			--tetrisSize
 			
-			with(wrapperElement.style) {
-				width = Math.floor(wrapperWidth) + 'px'
-				height = Math.floor(wrapperHeight) + 'px'
-			}
+			tetris.destroy()
+			updateTetris()
 		}
 		
-		updateWrapperSize(wrapper1)
-		updateWrapperSize(wrapper2)
-		updateWrapperSize(wrapper3)
-		
-		window.onresize = function() {
-			updateWrapperSize(wrapper1)
-			updateWrapperSize(wrapper2)
-			updateWrapperSize(wrapper3)
+		function nextTetris() {
+			tetrisWidth += 2
+			tetrisHeight += 2
+			++tetrisSize
+			
+			tetris.destroy()
+			updateTetris()
 		}
 		
-		var tetris1 = createTetris(wrapper1, 10, 20, 4)
-		var tetris2 = createTetris(wrapper2, 10, 20, 5)
-		//var tetris3 = createTetris(wrapper3, 12, 24, 6)
-		var tetris3 = createTetris(wrapper3, 200, 400, 100)
-		//var tetris3 = createTetris(wrapper3, 400, 800, 200)
-
-		tetris1.frame.focus()
+		function moveLeft() {
+			tetris.frame.contentWindow.onkeydown({keyCode: 37})
+		}
+		
+		function moveRight() {
+			tetris.frame.contentWindow.onkeydown({keyCode: 39})
+		}
+		
+		function speedUp() {
+			tetris.frame.contentWindow.onkeydown({keyCode: 40})
+		}
+		
+		function speedDown() {
+			tetris.frame.contentWindow.onkeyup({keyCode: 40})
+		}
+		
+		function rotate() {
+			tetris.frame.contentWindow.onkeydown({keyCode: 38})
+		}
+		
+		updateTetris()
 	</script>
 </body>
 </html>
