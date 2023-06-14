@@ -52,10 +52,8 @@
 			height: 100px;
 			border-radius: 50px;
 			background-color: #ff0;
-			border-top: 4px solid #ff0;
-			border-left: 4px solid #ff0;
-			border-bottom: 4px solid #ee0;
-			border-right: 4px solid #ee0;
+			border: none;
+			box-shadow: 4px 4px 4px 0px #ee0;
 		}
 
 		.tetrises-controls__left button:nth-child(2) {
@@ -71,10 +69,8 @@
 			height: 200px;
 			border-radius: 100px;
 			background-color: #ff0;
-			border-top: 4px solid #ff0;
-			border-left: 4px solid #ff0;
-			border-bottom: 4px solid #ee0;
-			border-right: 4px solid #ee0;
+			border: none;
+			box-shadow: 4px 4px 4px 0px #ee0;
 		}
 	</style>
 </head>
@@ -86,15 +82,15 @@
 			<button onclick="nextTetris()">=></button>
 		</div>
 
-		<div class="tetrises-controls">
+		<div class="tetrises-controls" ontouchend="event.preventDefault(); event.stopPropagation()">
 			<div class="tetrises-controls__left">
-				<button onmousedown="moveLeft()" ontouchstart="moveLeft()"></button>
-				<button onmousedown="speedUp()" onmouseup="speedDown()" ontouchstart="speedUp()" ontouchend="speedDown()"></button>
-				<button onmousedown="moveRight()" ontouchstart="moveRight()"></button>
+				<button onmousedown="moveLeft()"></button>
+				<button onmousedown="speedUp()" onmouseup="speedDown()"></button>
+				<button onmousedown="moveRight()"></button>
 			</div>
 
 			<div class="tetrises-controls__right">
-				<button onmousedown="rotate()" ontouchstart="rotate()"></button>
+				<button onmousedown="rotate()"></button>
 			</div>
 		</div>
 	</div>
