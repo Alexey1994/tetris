@@ -82,15 +82,15 @@
 			<button onclick="nextTetris()">=></button>
 		</div>
 
-		<div class="tetrises-controls" ontouchend="event.preventDefault(); event.stopPropagation()">
+		<div class="tetrises-controls">
 			<div class="tetrises-controls__left">
-				<button onmousedown="moveLeft()"></button>
-				<button onmousedown="speedUp()" onmouseup="speedDown()"></button>
-				<button onmousedown="moveRight()"></button>
+				<button onmousedown="moveLeft()" ontouchend="event.preventDefault(); event.stopPropagation(); moveLeft()"></button>
+				<button onmousedown="speedUp()" onmouseup="speedDown()" ontouchstart="event.preventDefault(); event.stopPropagation(); speedUp()" ontouchend="event.preventDefault(); event.stopPropagation(); speedDown()"></button>
+				<button onmousedown="moveRight()" ontouchend="event.preventDefault(); event.stopPropagation(); moveRight()"></button>
 			</div>
 
 			<div class="tetrises-controls__right">
-				<button onmousedown="rotate()"></button>
+				<button onmousedown="rotate()" ontouchend="event.preventDefault(); event.stopPropagation(); rotate()"></button>
 			</div>
 		</div>
 	</div>
